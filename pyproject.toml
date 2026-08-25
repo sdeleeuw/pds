@@ -1,0 +1,17 @@
+[project]
+name = "pds"
+version = "0.1.0"
+description = "Personal Data Store"
+readme = "README.md"
+authors = [
+    { name = "Sander de Leeuw", email = "s.deleeuw@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+pds = "pds:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
