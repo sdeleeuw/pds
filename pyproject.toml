@@ -24,3 +24,6 @@ build-backend = "uv_build"
 dev = [
     "ruff>=0.16.4",
 ]
+
+[tool.ruff]
+exclude = ["migrations"]
