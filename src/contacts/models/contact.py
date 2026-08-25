@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Q
 
 from pds.mixins.timestamp import TimestampMixin
 
@@ -14,6 +15,26 @@ class ContactQuerySet(models.QuerySet):
 
     def writable_for_user(self, user: User) -> models.QuerySet:
         return self.filter(owner=user)
+
+    def search(self, query: str) -> models.QuerySet:
+        query = query.strip()
+
+        if not query:
+            return self
+
+        return self.filter(
+            Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(email__icontains=query)
+            | Q(mobile_phone__icontains=query)
+            | Q(home_phone__icontains=query)
+            | Q(address__icontains=query)
+            | Q(postal_code__icontains=query)
+            | Q(city__icontains=query)
+            | Q(region__icontains=query)
+            | Q(country__icontains=query)
+            | Q(notes__icontains=query)
+        )
 
 
 class Contact(TimestampMixin, models.Model):

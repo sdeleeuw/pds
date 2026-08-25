@@ -70,6 +70,7 @@ TEMPLATES = [
     },
 ]
 
+ASGI_APPLICATION = "pds.asgi.application"
 WSGI_APPLICATION = "pds.wsgi.application"
 
 # Database
@@ -125,3 +126,7 @@ MAILERS = {
         "BACKEND": "django.core.mail.backends.console.EmailBackend",
     },
 }
+
+# MCP authenticates as this Django user when no request-scoped user is set
+# (e.g. over Streamable HTTP). Leave empty to require explicit auth.
+MCP_USERNAME = config("MCP_USERNAME", default="")
