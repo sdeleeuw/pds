@@ -7,7 +7,11 @@ authors = [
     { name = "Sander de Leeuw", email = "s.deleeuw@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "dj-database-url>=3.1.2",
+    "django>=6.1",
+    "python-decouple>=3.8",
+]
 
 [project.scripts]
 pds = "pds:main"
