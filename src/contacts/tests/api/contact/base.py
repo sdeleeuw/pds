@@ -1,8 +1,9 @@
 from django.test import TestCase
 from ninja.testing import TestAsyncClient
+from ninja_jwt.tokens import RefreshToken
 
 from contacts.tests.fixtures import create_contact, create_user
-from pds.api import api
+from pds.urls import api
 
 
 class ContactAPITestCase(TestCase):
@@ -44,7 +45,10 @@ class ContactAPITestCase(TestCase):
         request_params = dict(kwargs)
 
         if user is not None:
-            request_params["user"] = user
+            access_token = str(RefreshToken.for_user(user).access_token)
+            headers = dict(request_params.pop("headers", {}))
+            headers["Authorization"] = f"Bearer {access_token}"
+            request_params["headers"] = headers
 
         return await getattr(self.client, method)(
             f"/contacts{path}",
