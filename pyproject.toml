@@ -11,6 +11,8 @@ dependencies = [
     "dj-database-url>=3.1.2",
     "django>=6.1",
     "django-ninja>=1.6.3",
+    "django-ninja-extra>=0.31.7",
+    "django-ninja-jwt>=5.4.5",
     "mcp>=2.1.1",
     "python-decouple>=3.8",
 ]
