@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Q
 
 from pds.mixins.timestamp import TimestampMixin
 
@@ -14,6 +15,26 @@ class ContactQuerySet(models.QuerySet):
 
     def writable_for_user(self, user: User) -> models.QuerySet:
         return self.filter(owner=user)
+
+    def search(self, query: str) -> models.QuerySet:
+        query = query.strip()
+
+        if not query:
+            return self
+
+        return self.filter(
+            Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(email__icontains=query)
+            | Q(mobile_phone__icontains=query)
+            | Q(home_phone__icontains=query)
+            | Q(address__icontains=query)
+            | Q(postal_code__icontains=query)
+            | Q(city__icontains=query)
+            | Q(region__icontains=query)
+            | Q(country__icontains=query)
+            | Q(notes__icontains=query)
+        )
 
 
 class Contact(TimestampMixin, models.Model):
@@ -28,7 +49,7 @@ class Contact(TimestampMixin, models.Model):
             if part and part.strip()
         )
 
-    email = models.EmailField(unique=True, default="", blank=True)
+    email = models.EmailField(default="", blank=True)
     mobile_phone = models.CharField(max_length=255, default="", blank=True)
     home_phone = models.CharField(max_length=255, default="", blank=True)
 
@@ -66,6 +87,13 @@ class Contact(TimestampMixin, models.Model):
 
     class Meta:
         db_table = "contacts"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "email"],
+                condition=~Q(email=""),
+                name="contacts_unique_owner_email",
+            ),
+        ]
 
     def __str__(self) -> str:
         return self.name
