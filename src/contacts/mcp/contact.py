@@ -64,7 +64,7 @@ async def search_contacts(
     if not query.strip():
         raise ToolError("Search query must not be empty")
 
-    contacts = get_queryset(user, False).search(query)[:limit]
+    contacts = get_queryset(user=user, for_write=False).search(query)[:limit]
 
     return [ContactSchema.model_validate(contact) async for contact in contacts]
 
@@ -83,7 +83,7 @@ async def list_contacts(
     user: Annotated[User, Resolve(get_current_user)],
 ) -> list[ContactSchema]:
     """List the authenticated user's contacts, newest not guaranteed."""
-    contacts = get_queryset(user, False)[:limit]
+    contacts = get_queryset(user=user, for_write=False)[:limit]
     return [ContactSchema.model_validate(contact) async for contact in contacts]
 
 
@@ -94,7 +94,8 @@ async def get_contact(
     user: Annotated[User, Resolve(get_current_user)],
 ) -> ContactSchema:
     """Get a single contact owned by the authenticated user."""
-    return ContactSchema.model_validate(await get_object(user, contact_id, False))
+    obj = await get_object(user=user, pk=contact_id, for_write=False)
+    return ContactSchema.model_validate(obj)
 
 
 @mcp.tool()
@@ -125,7 +126,7 @@ async def update_contact(
     Omitted fields are left unchanged.
     """
 
-    contact = await get_object(user, contact_id, True)
+    contact = await get_object(user=user, pk=contact_id, for_write=True)
     updates = payload.dict(exclude_unset=True)
 
     for attr, value in updates.items():
@@ -147,7 +148,7 @@ async def delete_contact(
 ) -> str:
     """Permanently delete a contact owned by the authenticated user."""
 
-    contact = await get_object(user, contact_id, True)
+    contact = await get_object(user=user, pk=contact_id, for_write=True)
 
     await contact.adelete()
 
