@@ -139,6 +139,9 @@ NINJA_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
 }
 
-# MCP authenticates as this Django user when no request-scoped user is set
-# (e.g. over Streamable HTTP). Leave empty to require explicit auth.
-MCP_USERNAME = config("MCP_USERNAME", default="")
+# MCP bearer-token auth (django-ninja-jwt). Issuer URL is required by the MCP
+# SDK AuthSettings model; authorization-server routes are not mounted.
+MCP_ISSUER_URL = config(
+    "MCP_ISSUER_URL",
+    default="http://localhost:8000/api/auth",
+)

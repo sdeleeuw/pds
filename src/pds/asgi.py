@@ -15,12 +15,15 @@ from django.core.asgi import get_asgi_application
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from pds.mcp import mcp
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pds.settings")
 
+# Django must be configured before importing pds.mcp: ninja_jwt reads
+# settings.SECRET_KEY at import time via api_settings.
 django_app = get_asgi_application()
-mcp_app = mcp.streamable_http_app(streamable_http_path="/")
+
+from pds.mcp import create_mcp_app, mcp
+
+mcp_app = create_mcp_app()
 
 
 @asynccontextmanager
