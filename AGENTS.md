@@ -13,9 +13,11 @@ Django command. `manage.py` is at `src/manage.py`, not the repo root.
   `asgi.py`, plus `pds/mcp/` (MCP server, token type, token verifier) and
   `pds/mixins/`.
 - `src/contacts/` — the one feature app, split into per-concern packages:
-  `models/`, `schemas/`, `api/`, `mcp/`, `admin/`, `tests/`.
-- Tests live inside each app at `<app>/tests/`, mirroring the source layout
-  (`contacts/tests/api/contact/`, `contacts/tests/mcp/contact/`).
+  `models/`, `schemas/`, `api/`, `mcp/`, `admin/`.
+- `src/tests/` — all tests in one package. Domain trees mirror the apps
+  (`tests/contacts/api/contact/`, `tests/contacts/mcp/contact/`,
+  `tests/pds/api/auth/`, `tests/pds/mcp/`). Shared fixtures live in
+  `tests/fixtures/`.
 
 Every package directory re-exports its public names from `__init__.py` with an
 explicit `__all__`. When you add a module to `models/`, `schemas/`, `api/`,
@@ -33,8 +35,8 @@ uv run ruff check .                 # lint (E, F; E501 ignored; migrations exclu
 uv run ruff format .                # format — CI runs `ruff format --check .`
 
 cd src && uv run python manage.py test                                    # full suite
-cd src && uv run python manage.py test contacts.tests.mcp.contact         # one package
-cd src && uv run python manage.py test contacts.tests.mcp.contact.test_update.UpdateContactTests.test_update_contact
+cd src && uv run python manage.py test tests.contacts.mcp.contact         # one package
+cd src && uv run python manage.py test tests.contacts.mcp.contact.test_update.UpdateContactTests.test_update_contact
 ```
 
 Tests require `DJANGO_SETTINGS_MODULE=pds.settings_test`. CI sets it as a job
@@ -79,7 +81,7 @@ effect in `ContactsConfig.ready()` — a new MCP module must be imported there o
 its tools will silently not exist.
 
 **Tests** use `django.test.TestCase` with class data built in `setUpTestData`,
-and shared fixtures `create_user` / `create_contact` from `<app>/tests/fixtures/`
+and shared fixtures `create_user` / `create_contact` from `tests.fixtures`
 rather than inline object creation. Each test package has a `base.py` with a
 `...TestCase` holding fixtures and a request/call helper; test modules are named
 after the operation (`test_create.py`, `test_update.py`) and contain only test
@@ -101,7 +103,7 @@ app that mounts the MCP app at `/mcp` and the Django app at `/`. Consequences:
   Django and 404s.
 - The MCP session manager is started by the Starlette lifespan. Tests that hit
   the endpoint over HTTP must drive lifespan via
-  `pds.tests.mcp.http.helpers.run_lifespan`; the session manager can only be
+  `tests.pds.mcp.http.helpers.run_lifespan`; the session manager can only be
   started once per app.
 - Running `manage.py runserver` gets you Django only, without `/mcp`. Serve
   `pds.asgi:application` through an ASGI server to exercise the MCP endpoint.
