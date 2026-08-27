@@ -27,6 +27,22 @@ class ContactMCPTestCase(TestCase):
             email="jane@example.com",
         )
 
+        cls.second_contact = create_contact(
+            owner=cls.user,
+            first_name="Ada",
+            last_name="Lovelace",
+            email="ada@example.com",
+            city="London",
+        )
+
+        cls.third_contact = create_contact(
+            owner=cls.user,
+            first_name="Jane",
+            last_name="Second",
+            email="jane.second@example.com",
+            city="Amsterdam",
+        )
+
         cls.other_contact = create_contact(
             owner=cls.other_user,
             first_name="John",
@@ -54,6 +70,8 @@ class ContactMCPTestCase(TestCase):
 
     def contact_data(self, result) -> dict | list:
         data = result.structured_content
+
         if isinstance(data, dict) and "result" in data and len(data) == 1:
             return data["result"]
+
         return data

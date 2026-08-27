@@ -8,7 +8,7 @@ class CreateContactTests(ContactMCPTestCase):
         payload = {
             "first_name": "Ada",
             "last_name": "Lovelace",
-            "email": "ada@example.com",
+            "email": "created.ada@example.com",
             "mobile_phone": "+31600000001",
             "city": "London",
             "country": "GB",
@@ -21,17 +21,18 @@ class CreateContactTests(ContactMCPTestCase):
 
         # Then: the contact is created and owned by the user
         self.assertFalse(result.is_error)
+
         data = self.contact_data(result)
         self.assertEqual(data["first_name"], "Ada")
         self.assertEqual(data["last_name"], "Lovelace")
-        self.assertEqual(data["email"], "ada@example.com")
+        self.assertEqual(data["email"], "created.ada@example.com")
         self.assertEqual(data["name"], "Ada Lovelace")
         self.assertEqual(data["city"], "London")
         self.assertEqual(data["date_of_birth"], "1815-12-10")
 
         contact = await Contact.objects.aget(pk=data["id"])
         self.assertEqual(contact.owner_id, self.user.id)
-        self.assertEqual(contact.email, "ada@example.com")
+        self.assertEqual(contact.email, "created.ada@example.com")
 
     async def test_create_contact_with_defaults(self):
         # Given: an authenticated user and a minimal payload
@@ -44,6 +45,7 @@ class CreateContactTests(ContactMCPTestCase):
 
         # Then: missing fields fall back to defaults
         self.assertFalse(result.is_error)
+
         data = self.contact_data(result)
         self.assertEqual(data["first_name"], "Minimal")
         self.assertEqual(data["last_name"], "")

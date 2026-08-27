@@ -1,18 +1,7 @@
-from contacts.tests.fixtures import create_contact
 from contacts.tests.mcp.contact.base import ContactMCPTestCase
 
 
 class ListContactsTests(ContactMCPTestCase):
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        create_contact(
-            owner=cls.user,
-            first_name="Ada",
-            last_name="Lovelace",
-            email="ada@example.com",
-        )
-
     async def test_list_returns_own_contacts(self):
         # Given: an authenticated user with owned contacts
 
@@ -21,9 +10,10 @@ class ListContactsTests(ContactMCPTestCase):
 
         # Then: only that user's contacts are returned
         self.assertFalse(result.is_error)
+
         data = self.contact_data(result)
         ids = {item["id"] for item in data}
-        self.assertEqual(len(data), 2)
+        self.assertEqual(len(data), 3)
         self.assertIn(self.contact.id, ids)
         jane = next(item for item in data if item["id"] == self.contact.id)
         self.assertEqual(jane["first_name"], "Jane")
@@ -39,6 +29,7 @@ class ListContactsTests(ContactMCPTestCase):
 
         # Then: only the current user's contacts are included
         self.assertFalse(result.is_error)
+
         ids = {item["id"] for item in self.contact_data(result)}
         self.assertIn(self.contact.id, ids)
         self.assertNotIn(self.other_contact.id, ids)

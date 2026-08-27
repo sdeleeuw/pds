@@ -1,18 +1,7 @@
-from contacts.tests.fixtures import create_contact
 from contacts.tests.mcp.contact.base import ContactMCPTestCase
 
 
 class UpdateContactTests(ContactMCPTestCase):
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.second_contact = create_contact(
-            owner=cls.user,
-            first_name="Ada",
-            last_name="Lovelace",
-            email="ada@example.com",
-        )
-
     async def test_update_contact(self):
         # Given: a contact owned by the authenticated user
 
@@ -31,6 +20,7 @@ class UpdateContactTests(ContactMCPTestCase):
 
         # Then: those fields are updated and persisted
         self.assertFalse(result.is_error)
+
         data = self.contact_data(result)
         self.assertEqual(data["first_name"], "Janet")
         self.assertEqual(data["last_name"], "Doe")
@@ -57,6 +47,7 @@ class UpdateContactTests(ContactMCPTestCase):
 
         # Then: only the email changes
         self.assertFalse(result.is_error)
+
         data = self.contact_data(result)
         self.assertEqual(data["email"], "janet.doe@example.com")
         self.assertEqual(data["first_name"], "Jane")

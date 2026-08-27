@@ -1,28 +1,7 @@
-from contacts.tests.fixtures import create_contact
 from contacts.tests.mcp.contact.base import ContactMCPTestCase
 
 
 class SearchContactsTests(ContactMCPTestCase):
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.contact.city = "Amsterdam"
-        cls.contact.save()
-        create_contact(
-            owner=cls.user,
-            first_name="Ada",
-            last_name="Lovelace",
-            email="ada@example.com",
-            city="London",
-        )
-        create_contact(
-            owner=cls.user,
-            first_name="Jane",
-            last_name="Second",
-            email="jane.second@example.com",
-            city="Amsterdam",
-        )
-
     async def test_search_by_name(self):
         # Given: multiple owned contacts
 
@@ -31,6 +10,7 @@ class SearchContactsTests(ContactMCPTestCase):
 
         # Then: only matching contacts are returned
         self.assertFalse(result.is_error)
+
         data = self.contact_data(result)
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["first_name"], "Ada")
@@ -44,6 +24,7 @@ class SearchContactsTests(ContactMCPTestCase):
 
         # Then: the London contact is returned
         self.assertFalse(result.is_error)
+
         data = self.contact_data(result)
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["first_name"], "Ada")

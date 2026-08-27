@@ -13,6 +13,7 @@ class GetContactTests(ContactMCPTestCase):
 
         # Then: the contact details are returned
         self.assertFalse(result.is_error)
+
         data = self.contact_data(result)
         self.assertEqual(data["id"], self.contact.id)
         self.assertEqual(data["first_name"], "Jane")
