@@ -1,5 +1,7 @@
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from django.contrib import admin
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.http import HttpRequest
 from django.urls import path
 from ninja import Schema
@@ -60,3 +62,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", api.urls),
 ]
+
+# uvicorn (unlike runserver) does not serve app static files; enable that in DEBUG.
+if settings.DEBUG:
+    urlpatterns += staticfiles_urlpatterns()
