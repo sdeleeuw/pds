@@ -56,7 +56,7 @@ class ContactMCPTestCase(TestCase):
         )
 
     async def call_tool(self, name: str, arguments: dict | None = None, *, user=_UNSET):
-        from pds.mcp import mcp
+        from pds.mcp.server import mcp
 
         if user is _UNSET:
             user = self.user

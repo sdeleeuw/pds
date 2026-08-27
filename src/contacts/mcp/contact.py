@@ -8,7 +8,8 @@ from pydantic import Field
 
 from contacts.models import Contact
 from contacts.schemas import ContactCreateUpdateSchema, ContactSchema
-from pds.mcp import get_current_user, mcp
+from pds.mcp.auth import get_current_user
+from pds.mcp.server import mcp
 
 User = get_user_model()
 

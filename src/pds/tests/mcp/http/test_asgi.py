@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from pds.asgi import create_application
-from pds.mcp import mcp
+from pds.mcp.server import mcp
 from pds.tests.mcp.http.helpers import run_lifespan
 
 from .test_auth import MCPHTTPAuthTestCase

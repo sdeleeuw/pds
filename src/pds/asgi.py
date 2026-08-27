@@ -19,11 +19,11 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pds.settings")
 
-# Django must be configured before importing pds.mcp: ninja_jwt reads
+# Django must be configured before importing pds.mcp.server: ninja_jwt reads
 # settings.SECRET_KEY at import time via api_settings.
 django_app = get_asgi_application()
 
-from pds.mcp import create_mcp_app, mcp  # noqa: E402
+from pds.mcp.server import create_mcp_app, mcp  # noqa: E402
 
 
 class _NormalizeMCPPath:

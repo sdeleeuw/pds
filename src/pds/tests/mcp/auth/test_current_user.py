@@ -1,7 +1,7 @@
 from django.test import TestCase
 from mcp.server.mcpserver.exceptions import ToolError
 
-from pds.mcp import get_current_user
+from pds.mcp.auth import get_current_user
 from pds.tests.fixtures import create_user
 from pds.tests.mcp.auth.helpers import authenticated_as, mcp_access_token
 
