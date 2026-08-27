@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from mcp.server import MCPServer
@@ -27,6 +25,7 @@ _LOCAL_HOSTS = ("127.0.0.1", "localhost", "[::1]")
 def _transport_security() -> TransportSecuritySettings:
     # DNS rebinding protection is off under DEBUG so local browsers and MCP
     # clients can reach /mcp without an ALLOWED_HOSTS entry for every port.
+
     enable_protection = not settings.DEBUG
     hosts: list[str] = []
     origins: list[str] = []

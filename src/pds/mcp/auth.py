@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
 from mcp.server.auth.middleware.auth_context import get_access_token
@@ -12,8 +8,7 @@ from ninja_jwt.settings import api_settings
 
 from pds.mcp.tokens import MCPToken
 
-if TYPE_CHECKING:
-    from django.contrib.auth.models import AbstractBaseUser
+User = get_user_model()
 
 
 class NinjaJWTTokenVerifier(TokenVerifier):
@@ -40,13 +35,12 @@ class NinjaJWTTokenVerifier(TokenVerifier):
         )
 
 
-async def get_current_user() -> AbstractBaseUser:
+async def get_current_user() -> User:
     access_token = get_access_token()
 
     if access_token is None or not access_token.subject:
         raise ToolError("Authentication required")
 
-    User = get_user_model()
     user = await User.objects.filter(
         pk=access_token.subject,
         is_active=True,
