@@ -1,34 +1,28 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
-from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
+from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.mcpserver.exceptions import ToolError
-from ninja_jwt.authentication import JWTBaseAuthentication
-from ninja_jwt.exceptions import InvalidToken, TokenBackendError, TokenError
+from ninja_jwt.exceptions import TokenBackendError, TokenError
 from ninja_jwt.settings import api_settings
+
+from pds.mcp.tokens import MCPToken
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
 
-_current_user: ContextVar[AbstractBaseUser | None] = ContextVar(
-    "mcp_current_user",
-    default=None,
-)
-
 
 class NinjaJWTTokenVerifier(TokenVerifier):
-    """Validate MCP Bearer tokens using django-ninja-jwt access tokens."""
+    """Validate MCP Bearer tokens as dedicated django-ninja-jwt MCP tokens."""
 
     async def verify_token(self, token: str) -> AccessToken | None:
         try:
-            validated = JWTBaseAuthentication.get_validated_token(token)
-        except InvalidToken, TokenError, TokenBackendError:
+            validated = await sync_to_async(MCPToken)(token)
+        except TokenError, TokenBackendError:
             return None
 
         user_id = validated.payload.get(api_settings.USER_ID_CLAIM)
@@ -49,31 +43,16 @@ class NinjaJWTTokenVerifier(TokenVerifier):
 async def get_current_user() -> AbstractBaseUser:
     access_token = get_access_token()
 
-    if access_token is not None and access_token.subject:
-        User = get_user_model()
-        user = await User.objects.filter(
-            pk=access_token.subject,
-            is_active=True,
-        ).afirst()
-
-        if user is not None:
-            return user
-
+    if access_token is None or not access_token.subject:
         raise ToolError("Authentication required")
 
-    user = _current_user.get()
+    User = get_user_model()
+    user = await User.objects.filter(
+        pk=access_token.subject,
+        is_active=True,
+    ).afirst()
 
-    if user is not None:
-        return user
+    if user is None:
+        raise ToolError("Authentication required")
 
-    raise ToolError("Authentication required")
-
-
-@contextmanager
-def as_user(user: AbstractBaseUser) -> Iterator[AbstractBaseUser]:
-    token = _current_user.set(user)
-
-    try:
-        yield user
-    finally:
-        _current_user.reset(token)
+    return user

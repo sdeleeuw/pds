@@ -52,6 +52,48 @@ class CreateContactTests(ContactMCPTestCase):
         self.assertIsNone(data["date_of_birth"])
         self.assertIsNone(data["age"])
 
+    async def test_create_duplicate_email_returns_error(self):
+        # Given: the user already owns a contact with this email
+
+        # When: creating another contact with the same email
+        result = await self.call_tool(
+            "create_contact",
+            {"payload": {"first_name": "Copy", "email": "jane@example.com"}},
+        )
+
+        # Then: the call fails with an actionable error
+        self.assertTrue(result.is_error)
+
+    async def test_create_multiple_blank_emails(self):
+        # Given: an authenticated user
+
+        # When: creating two contacts without an email
+        first = await self.call_tool(
+            "create_contact",
+            {"payload": {"first_name": "BlankOne"}},
+        )
+        second = await self.call_tool(
+            "create_contact",
+            {"payload": {"first_name": "BlankTwo"}},
+        )
+
+        # Then: both succeed
+        self.assertFalse(first.is_error)
+        self.assertFalse(second.is_error)
+
+    async def test_create_same_email_for_other_owner(self):
+        # Given: another user already has a contact with this email
+
+        # When: creating a contact with the same email as the current user
+        result = await self.call_tool(
+            "create_contact",
+            {"payload": {"first_name": "AlsoJohn", "email": "john@example.com"}},
+        )
+
+        # Then: the contact is created because uniqueness is per owner
+        self.assertFalse(result.is_error)
+        self.assertEqual(self.contact_data(result)["email"], "john@example.com")
+
     async def test_create_unauthenticated(self):
         # Given: no authenticated user
 

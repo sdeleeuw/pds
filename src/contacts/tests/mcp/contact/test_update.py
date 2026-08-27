@@ -1,7 +1,18 @@
+from contacts.tests.fixtures import create_contact
 from contacts.tests.mcp.contact.base import ContactMCPTestCase
 
 
 class UpdateContactTests(ContactMCPTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.second_contact = create_contact(
+            owner=cls.user,
+            first_name="Ada",
+            last_name="Lovelace",
+            email="ada@example.com",
+        )
+
     async def test_update_contact(self):
         # Given: a contact owned by the authenticated user
 
@@ -79,6 +90,21 @@ class UpdateContactTests(ContactMCPTestCase):
         )
 
         # Then: the contact is not found
+        self.assertTrue(result.is_error)
+
+    async def test_update_duplicate_email_returns_error(self):
+        # Given: the user already owns a second contact with a different email
+
+        # When: changing that contact to the first contact's email
+        result = await self.call_tool(
+            "update_contact",
+            {
+                "contact_id": self.second_contact.id,
+                "payload": {"email": "jane@example.com"},
+            },
+        )
+
+        # Then: the call fails with an actionable error
         self.assertTrue(result.is_error)
 
     async def test_update_unauthenticated(self):

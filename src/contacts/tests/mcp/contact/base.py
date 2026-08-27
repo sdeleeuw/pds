@@ -2,7 +2,7 @@ from django.test import TestCase
 from mcp import Client
 
 from contacts.tests.fixtures import create_contact, create_user
-from pds.mcp import as_user, mcp
+from pds.tests.mcp.auth.helpers import authenticated_as
 
 _UNSET = object()
 
@@ -40,6 +40,8 @@ class ContactMCPTestCase(TestCase):
         )
 
     async def call_tool(self, name: str, arguments: dict | None = None, *, user=_UNSET):
+        from pds.mcp import mcp
+
         if user is _UNSET:
             user = self.user
 
@@ -47,7 +49,7 @@ class ContactMCPTestCase(TestCase):
             if user is None:
                 return await client.call_tool(name, arguments or {})
 
-            with as_user(user):
+            with authenticated_as(user):
                 return await client.call_tool(name, arguments or {})
 
     def contact_data(self, result) -> dict | list:

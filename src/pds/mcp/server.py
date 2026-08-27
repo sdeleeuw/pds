@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.transport_security import TransportSecuritySettings
@@ -20,8 +21,13 @@ mcp = MCPServer(
     ),
 )
 
+_LOCAL_HOSTS = ("127.0.0.1", "localhost", "[::1]")
+
 
 def _transport_security() -> TransportSecuritySettings:
+    # DNS rebinding protection is off under DEBUG so local browsers and MCP
+    # clients can reach /mcp without an ALLOWED_HOSTS entry for every port.
+    enable_protection = not settings.DEBUG
     hosts: list[str] = []
     origins: list[str] = []
 
@@ -34,16 +40,21 @@ def _transport_security() -> TransportSecuritySettings:
         hosts.append(host)
         hosts.append(f"{host}:*")
 
-        if host in ("127.0.0.1", "localhost", "[::1]"):
+        if host in _LOCAL_HOSTS:
             origins.append(f"http://{host}:*")
         else:
             origins.append(f"https://{host}")
             origins.append(f"https://{host}:*")
-            origins.append(f"http://{host}")
-            origins.append(f"http://{host}:*")
+
+    if enable_protection and not hosts:
+        raise ImproperlyConfigured(
+            "MCP DNS rebinding protection is enabled but ALLOWED_HOSTS has no "
+            "usable hosts. Set ALLOWED_HOSTS to the public hostname(s) of this "
+            "server, or set DEBUG=true to disable protection locally."
+        )
 
     return TransportSecuritySettings(
-        enable_dns_rebinding_protection=not settings.DEBUG,
+        enable_dns_rebinding_protection=enable_protection,
         allowed_hosts=hosts,
         allowed_origins=origins,
     )

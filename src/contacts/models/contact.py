@@ -49,7 +49,7 @@ class Contact(TimestampMixin, models.Model):
             if part and part.strip()
         )
 
-    email = models.EmailField(unique=True, default="", blank=True)
+    email = models.EmailField(default="", blank=True)
     mobile_phone = models.CharField(max_length=255, default="", blank=True)
     home_phone = models.CharField(max_length=255, default="", blank=True)
 
@@ -87,6 +87,13 @@ class Contact(TimestampMixin, models.Model):
 
     class Meta:
         db_table = "contacts"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "email"],
+                condition=~Q(email=""),
+                name="contacts_unique_owner_email",
+            ),
+        ]
 
     def __str__(self) -> str:
         return self.name

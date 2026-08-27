@@ -1,22 +1,35 @@
+from contacts.tests.fixtures import create_contact
 from contacts.tests.mcp.contact.base import ContactMCPTestCase
 
 
 class ListContactsTests(ContactMCPTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        create_contact(
+            owner=cls.user,
+            first_name="Ada",
+            last_name="Lovelace",
+            email="ada@example.com",
+        )
+
     async def test_list_returns_own_contacts(self):
-        # Given: an authenticated user with an owned contact
+        # Given: an authenticated user with owned contacts
 
         # When: listing contacts
         result = await self.call_tool("list_contacts")
 
-        # Then: only that contact is returned
+        # Then: only that user's contacts are returned
         self.assertFalse(result.is_error)
         data = self.contact_data(result)
-        self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]["id"], self.contact.id)
-        self.assertEqual(data[0]["first_name"], "Jane")
-        self.assertEqual(data[0]["last_name"], "Doe")
-        self.assertEqual(data[0]["email"], "jane@example.com")
-        self.assertEqual(data[0]["name"], "Jane Doe")
+        ids = {item["id"] for item in data}
+        self.assertEqual(len(data), 2)
+        self.assertIn(self.contact.id, ids)
+        jane = next(item for item in data if item["id"] == self.contact.id)
+        self.assertEqual(jane["first_name"], "Jane")
+        self.assertEqual(jane["last_name"], "Doe")
+        self.assertEqual(jane["email"], "jane@example.com")
+        self.assertEqual(jane["name"], "Jane Doe")
 
     async def test_list_excludes_other_users_contacts(self):
         # Given: contacts owned by the current user and another user
@@ -42,6 +55,16 @@ class ListContactsTests(ContactMCPTestCase):
         # Then: an empty list is returned
         self.assertFalse(result.is_error)
         self.assertEqual(self.contact_data(result), [])
+
+    async def test_list_respects_limit(self):
+        # Given: more owned contacts than the requested limit
+
+        # When: listing with a limit of 1
+        result = await self.call_tool("list_contacts", {"limit": 1})
+
+        # Then: at most one contact is returned
+        self.assertFalse(result.is_error)
+        self.assertEqual(len(self.contact_data(result)), 1)
 
     async def test_list_unauthenticated(self):
         # Given: no authenticated user

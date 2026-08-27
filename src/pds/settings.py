@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "ninja",
     "ninja_extra",
     "ninja_jwt",
+    "ninja_jwt.token_blacklist",
     "contacts",
 ]
 
@@ -141,7 +142,11 @@ NINJA_JWT = {
 
 # MCP bearer-token auth (django-ninja-jwt). Issuer URL is required by the MCP
 # SDK AuthSettings model; authorization-server routes are not mounted.
+# MCP tokens are a dedicated token_type and are not accepted by the REST API.
 MCP_ISSUER_URL = config(
     "MCP_ISSUER_URL",
     default="http://localhost:8000/api/auth",
+)
+MCP_TOKEN_LIFETIME = timedelta(
+    days=config("MCP_TOKEN_LIFETIME_DAYS", default=90, cast=int),
 )
