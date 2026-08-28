@@ -17,7 +17,7 @@ class CreateContactTests(ContactMCPTestCase):
         }
 
         # When: creating a contact
-        result = await self.call_tool("create_contact", {"payload": payload})
+        result = await self.call_tool("create_contact", payload)
 
         # Then: the contact is created and owned by the user
         self.assertFalse(result.is_error)
@@ -40,7 +40,7 @@ class CreateContactTests(ContactMCPTestCase):
         # When: creating a contact with only a first name
         result = await self.call_tool(
             "create_contact",
-            {"payload": {"first_name": "Minimal"}},
+            {"first_name": "Minimal"},
         )
 
         # Then: missing fields fall back to defaults
@@ -60,7 +60,7 @@ class CreateContactTests(ContactMCPTestCase):
         # When: creating another contact with the same email
         result = await self.call_tool(
             "create_contact",
-            {"payload": {"first_name": "Copy", "email": "jane@example.com"}},
+            {"first_name": "Copy", "email": "jane@example.com"},
         )
 
         # Then: the call fails with an actionable error
@@ -72,11 +72,11 @@ class CreateContactTests(ContactMCPTestCase):
         # When: creating two contacts without an email
         first = await self.call_tool(
             "create_contact",
-            {"payload": {"first_name": "BlankOne"}},
+            {"first_name": "BlankOne"},
         )
         second = await self.call_tool(
             "create_contact",
-            {"payload": {"first_name": "BlankTwo"}},
+            {"first_name": "BlankTwo"},
         )
 
         # Then: both succeed
@@ -89,7 +89,7 @@ class CreateContactTests(ContactMCPTestCase):
         # When: creating a contact with the same email as the current user
         result = await self.call_tool(
             "create_contact",
-            {"payload": {"first_name": "AlsoJohn", "email": "john@example.com"}},
+            {"first_name": "AlsoJohn", "email": "john@example.com"},
         )
 
         # Then: the contact is created because uniqueness is per owner
@@ -102,9 +102,45 @@ class CreateContactTests(ContactMCPTestCase):
         # When: creating a contact
         result = await self.call_tool(
             "create_contact",
-            {"payload": {"first_name": "Nope", "email": "nope@example.com"}},
+            {"first_name": "Nope", "email": "nope@example.com"},
             user=None,
         )
 
         # Then: the call fails
         self.assertTrue(result.is_error)
+
+    async def test_create_rejects_name_and_phone(self):
+        # Given: an authenticated user and a count of existing contacts
+        before = await Contact.objects.acount()
+
+        # When: creating with the common invalid name/phone fields
+        result = await self.call_tool(
+            "create_contact",
+            {"name": "Tjeerd de Leeuw", "phone": "0651553514"},
+        )
+
+        # Then: the call fails and no contact is created
+        self.assertTrue(result.is_error)
+        self.assertEqual(await Contact.objects.acount(), before)
+
+    async def test_create_with_first_last_and_mobile_phone(self):
+        # Given: an authenticated user and a split name plus mobile number
+
+        # When: creating with the writable field names
+        result = await self.call_tool(
+            "create_contact",
+            {
+                "first_name": "Tjeerd",
+                "last_name": "de Leeuw",
+                "mobile_phone": "0651553514",
+            },
+        )
+
+        # Then: the contact is stored with those fields
+        self.assertFalse(result.is_error)
+
+        data = self.contact_data(result)
+        self.assertEqual(data["first_name"], "Tjeerd")
+        self.assertEqual(data["last_name"], "de Leeuw")
+        self.assertEqual(data["mobile_phone"], "0651553514")
+        self.assertEqual(data["name"], "Tjeerd de Leeuw")

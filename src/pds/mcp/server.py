@@ -2,14 +2,27 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings
+from mcp.server.mcpserver.utilities.func_metadata import ArgModelBase
 from mcp.server.transport_security import TransportSecuritySettings
+from pydantic import ConfigDict
 from starlette.applications import Starlette
 
 from pds.mcp.auth import NinjaJWTTokenVerifier
 
+_LOCAL_HOSTS = ("127.0.0.1", "localhost", "[::1]")
+
+
+# The SDK's generated tool-argument models inherit this. Default extra is
+# ignore, which drops unknown keys (name, phone, …) before the tool runs.
+ArgModelBase.model_config = ConfigDict(
+    arbitrary_types_allowed=True,
+    extra="forbid",
+)
+
+
 mcp = MCPServer(
     "PDS",
-    instructions="Personal Data Store MCP server for managing contacts.",
+    instructions="Personal Data Store MCP server for managing user's data.",
     log_level="WARNING",
     token_verifier=NinjaJWTTokenVerifier(),
     auth=AuthSettings(
@@ -18,8 +31,6 @@ mcp = MCPServer(
         required_scopes=None,
     ),
 )
-
-_LOCAL_HOSTS = ("127.0.0.1", "localhost", "[::1]")
 
 
 def _transport_security() -> TransportSecuritySettings:

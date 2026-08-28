@@ -72,3 +72,17 @@ class CreateContactTests(ContactAPITestCase):
 
         # Then: the request is rejected
         self.assertEqual(response.status_code, 401)
+
+    async def test_create_rejects_unknown_fields(self):
+        # Given: an authenticated user and a payload with an unknown field
+
+        # When: creating a contact
+        response = await self.request(
+            "post",
+            "/",
+            user=self.user,
+            json={"first_name": "Ada", "phone": "0651553514"},
+        )
+
+        # Then: the request is rejected
+        self.assertEqual(response.status_code, 422)

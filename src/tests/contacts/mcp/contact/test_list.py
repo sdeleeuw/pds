@@ -65,3 +65,12 @@ class ListContactsTests(ContactMCPTestCase):
 
         # Then: the call fails
         self.assertTrue(result.is_error)
+
+    async def test_list_rejects_unknown_fields(self):
+        # Given: an authenticated user
+
+        # When: listing with a field the schema does not accept
+        result = await self.call_tool("list_contacts", {"name": "Jane"})
+
+        # Then: the call fails
+        self.assertTrue(result.is_error)

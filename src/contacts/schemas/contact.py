@@ -1,6 +1,7 @@
 from datetime import date
 
 from ninja import ModelSchema, Schema
+from pydantic import ConfigDict, Field
 
 from contacts.models import Contact
 
@@ -31,15 +32,20 @@ class ContactSchema(ModelSchema):
 
 
 class ContactCreateUpdateSchema(Schema):
-    first_name: str = ""
-    last_name: str = ""
-    email: str = ""
-    mobile_phone: str = ""
-    home_phone: str = ""
-    address: str = ""
-    postal_code: str = ""
-    city: str = ""
-    region: str = ""
-    country: str = ""
-    date_of_birth: date | None = None
-    notes: str = ""
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    first_name: str = Field(default="", description="Given name.")
+    last_name: str = Field(default="", description="Family name.")
+    email: str = Field(default="", description="Email address.")
+    mobile_phone: str = Field(default="", description="Mobile phone number.")
+    home_phone: str = Field(default="", description="Home phone number.")
+    address: str = Field(default="", description="Street address.")
+    postal_code: str = Field(default="", description="Postal or ZIP code.")
+    city: str = Field(default="", description="City.")
+    region: str = Field(default="", description="State, province, or region.")
+    country: str = Field(default="", description="Country.")
+    date_of_birth: date | None = Field(
+        default=None,
+        description="Date of birth (YYYY-MM-DD).",
+    )
+    notes: str = Field(default="", description="Free-form notes about the contact.")

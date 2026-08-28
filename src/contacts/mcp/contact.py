@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated
 
 from django.contrib.auth import get_user_model
@@ -8,6 +9,12 @@ from pydantic import Field
 
 from contacts.models import Contact
 from contacts.schemas import ContactCreateUpdateSchema, ContactSchema
+from pds.mcp.annotations import (
+    CREATE_ANNOTATIONS,
+    DELETE_ANNOTATIONS,
+    READ_ONLY_ANNOTATIONS,
+    UPDATE_ANNOTATIONS,
+)
 from pds.mcp.auth import get_current_user
 from pds.mcp.server import mcp
 
@@ -33,7 +40,7 @@ async def get_object(user: User, pk: int, for_write: bool) -> Contact:
     return contact
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY_ANNOTATIONS)
 async def search_contacts(
     query: Annotated[
         str,
@@ -56,10 +63,12 @@ async def search_contacts(
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> list[ContactSchema]:
-    """Search the authenticated user's contacts.
+    """Search the authenticated user's contacts by a non-empty substring.
 
-    Matching is a case-insensitive substring across name, email, phone,
-    address, and notes fields. An empty query is rejected.
+    Matching is case-insensitive across first_name, last_name, email, phone
+    numbers, address, and notes. Use list_contacts to page without a query,
+    and get_contact when you already have an id. Returned name and age are
+    computed and read-only.
     """
 
     if not query.strip():
@@ -70,7 +79,7 @@ async def search_contacts(
     return [ContactSchema.model_validate(contact) async for contact in contacts]
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY_ANNOTATIONS)
 async def list_contacts(
     limit: Annotated[
         int,
@@ -83,29 +92,74 @@ async def list_contacts(
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> list[ContactSchema]:
-    """List the authenticated user's contacts, newest not guaranteed."""
+    """List the authenticated user's contacts, newest not guaranteed.
+
+    Use search_contacts to filter by a substring, and get_contact for a
+    single id. Returned name and age are computed and read-only.
+    """
     contacts = get_queryset(user=user, for_write=False)[:limit]
     return [ContactSchema.model_validate(contact) async for contact in contacts]
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY_ANNOTATIONS)
 async def get_contact(
     contact_id: Annotated[int, Field(description="ID of the contact to retrieve.")],
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> ContactSchema:
-    """Get a single contact owned by the authenticated user."""
+    """Get a single contact owned by the authenticated user.
+
+    Use search_contacts or list_contacts to find an id. Returned name and
+    age are computed and read-only.
+    """
     obj = await get_object(user=user, pk=contact_id, for_write=False)
     return ContactSchema.model_validate(obj)
 
 
-@mcp.tool()
+def _field_with_desc(name: str):
+    return Field(description=ContactCreateUpdateSchema.model_fields[name].description)
+
+
+@mcp.tool(annotations=CREATE_ANNOTATIONS)
 async def create_contact(
-    payload: ContactCreateUpdateSchema,
+    first_name: Annotated[str, _field_with_desc("first_name")] = "",
+    last_name: Annotated[str, _field_with_desc("last_name")] = "",
+    email: Annotated[str, _field_with_desc("email")] = "",
+    mobile_phone: Annotated[str, _field_with_desc("mobile_phone")] = "",
+    home_phone: Annotated[str, _field_with_desc("home_phone")] = "",
+    address: Annotated[str, _field_with_desc("address")] = "",
+    postal_code: Annotated[str, _field_with_desc("postal_code")] = "",
+    city: Annotated[str, _field_with_desc("city")] = "",
+    region: Annotated[str, _field_with_desc("region")] = "",
+    country: Annotated[str, _field_with_desc("country")] = "",
+    date_of_birth: Annotated[date | None, _field_with_desc("date_of_birth")] = None,
+    notes: Annotated[str, _field_with_desc("notes")] = "",
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> ContactSchema:
-    """Create a contact owned by the authenticated user."""
+    """Create a contact owned by the authenticated user.
+
+    Pass first_name and last_name separately; name is a read-only computed
+    field on the result. Phone numbers go in mobile_phone or home_phone,
+    not phone. Age is computed from date_of_birth and is also read-only.
+    """
+
+    payload = ContactCreateUpdateSchema.model_validate(
+        {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "mobile_phone": mobile_phone,
+            "home_phone": home_phone,
+            "address": address,
+            "postal_code": postal_code,
+            "city": city,
+            "region": region,
+            "country": country,
+            "date_of_birth": date_of_birth,
+            "notes": notes,
+        }
+    )
 
     try:
         contact = await Contact.objects.acreate(owner=user, **payload.dict())
@@ -115,20 +169,52 @@ async def create_contact(
     return ContactSchema.model_validate(contact)
 
 
-@mcp.tool()
+@mcp.tool(annotations=UPDATE_ANNOTATIONS)
 async def update_contact(
     contact_id: Annotated[int, Field(description="ID of the contact to update.")],
-    payload: ContactCreateUpdateSchema,
+    first_name: Annotated[str | None, _field_with_desc("first_name")] = None,
+    last_name: Annotated[str | None, _field_with_desc("last_name")] = None,
+    email: Annotated[str | None, _field_with_desc("email")] = None,
+    mobile_phone: Annotated[str | None, _field_with_desc("mobile_phone")] = None,
+    home_phone: Annotated[str | None, _field_with_desc("home_phone")] = None,
+    address: Annotated[str | None, _field_with_desc("address")] = None,
+    postal_code: Annotated[str | None, _field_with_desc("postal_code")] = None,
+    city: Annotated[str | None, _field_with_desc("city")] = None,
+    region: Annotated[str | None, _field_with_desc("region")] = None,
+    country: Annotated[str | None, _field_with_desc("country")] = None,
+    date_of_birth: Annotated[date | None, _field_with_desc("date_of_birth")] = None,
+    notes: Annotated[str | None, _field_with_desc("notes")] = None,
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> ContactSchema:
     """Update a contact owned by the authenticated user.
 
-    Omitted fields are left unchanged.
+    Omitted fields are left unchanged; pass an empty string to clear a text
+    field. Pass first_name and last_name separately; name is read-only.
+    Phone numbers go in mobile_phone or home_phone, not phone.
     """
 
     contact = await get_object(user=user, pk=contact_id, for_write=True)
-    updates = payload.dict(exclude_unset=True)
+    updates = ContactCreateUpdateSchema.model_validate(
+        {
+            name: value
+            for name, value in {
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "mobile_phone": mobile_phone,
+                "home_phone": home_phone,
+                "address": address,
+                "postal_code": postal_code,
+                "city": city,
+                "region": region,
+                "country": country,
+                "date_of_birth": date_of_birth,
+                "notes": notes,
+            }.items()
+            if value is not None
+        }
+    ).dict(exclude_unset=True)
 
     for attr, value in updates.items():
         setattr(contact, attr, value)
@@ -141,7 +227,7 @@ async def update_contact(
     return ContactSchema.model_validate(contact)
 
 
-@mcp.tool()
+@mcp.tool(annotations=DELETE_ANNOTATIONS)
 async def delete_contact(
     contact_id: Annotated[int, Field(description="ID of the contact to delete.")],
     *,

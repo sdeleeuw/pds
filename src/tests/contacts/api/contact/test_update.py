@@ -94,3 +94,20 @@ class UpdateContactTests(ContactAPITestCase):
 
         # Then: the request is rejected
         self.assertEqual(response.status_code, 401)
+
+    async def test_update_rejects_unknown_fields(self):
+        # Given: a contact owned by the authenticated user
+
+        # When: patching with an unknown field
+        response = await self.request(
+            "patch",
+            f"/{self.contact.id}/",
+            user=self.user,
+            json={"phone": "0651553514"},
+        )
+
+        # Then: the request is rejected and the contact is unchanged
+        self.assertEqual(response.status_code, 422)
+
+        await self.contact.arefresh_from_db()
+        self.assertEqual(self.contact.first_name, "Jane")

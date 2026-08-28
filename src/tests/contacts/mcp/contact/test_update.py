@@ -10,11 +10,9 @@ class UpdateContactTests(ContactMCPTestCase):
             "update_contact",
             {
                 "contact_id": self.contact.id,
-                "payload": {
-                    "first_name": "Janet",
-                    "city": "Rotterdam",
-                    "notes": "Updated notes",
-                },
+                "first_name": "Janet",
+                "city": "Rotterdam",
+                "notes": "Updated notes",
             },
         )
 
@@ -41,7 +39,7 @@ class UpdateContactTests(ContactMCPTestCase):
             "update_contact",
             {
                 "contact_id": self.contact.id,
-                "payload": {"email": "janet.doe@example.com"},
+                "email": "janet.doe@example.com",
             },
         )
 
@@ -53,6 +51,49 @@ class UpdateContactTests(ContactMCPTestCase):
         self.assertEqual(data["first_name"], "Jane")
         self.assertEqual(data["last_name"], "Doe")
 
+    async def test_update_empty_string_clears_field(self):
+        # Given: a contact owned by the authenticated user
+
+        # When: clearing the first name with an empty string
+        result = await self.call_tool(
+            "update_contact",
+            {
+                "contact_id": self.contact.id,
+                "first_name": "",
+            },
+        )
+
+        # Then: the first name is cleared and other fields are unchanged
+        self.assertFalse(result.is_error)
+
+        data = self.contact_data(result)
+        self.assertEqual(data["first_name"], "")
+        self.assertEqual(data["last_name"], "Doe")
+        self.assertEqual(data["name"], "Doe")
+
+        await self.contact.arefresh_from_db()
+        self.assertEqual(self.contact.first_name, "")
+        self.assertEqual(self.contact.last_name, "Doe")
+
+    async def test_update_rejects_unknown_fields(self):
+        # Given: a contact owned by the authenticated user
+
+        # When: patching with a field the schema does not accept
+        result = await self.call_tool(
+            "update_contact",
+            {
+                "contact_id": self.contact.id,
+                "phone": "0651553514",
+            },
+        )
+
+        # Then: the call fails and the contact is unchanged
+        self.assertTrue(result.is_error)
+
+        await self.contact.arefresh_from_db()
+        self.assertEqual(self.contact.first_name, "Jane")
+        self.assertEqual(self.contact.mobile_phone, "+31612345678")
+
     async def test_update_other_users_contact_returns_error(self):
         # Given: a contact owned by another user
 
@@ -61,7 +102,7 @@ class UpdateContactTests(ContactMCPTestCase):
             "update_contact",
             {
                 "contact_id": self.other_contact.id,
-                "payload": {"first_name": "Hacked"},
+                "first_name": "Hacked",
             },
         )
 
@@ -77,7 +118,7 @@ class UpdateContactTests(ContactMCPTestCase):
         # When: patching that contact
         result = await self.call_tool(
             "update_contact",
-            {"contact_id": 999999, "payload": {"first_name": "Ghost"}},
+            {"contact_id": 999999, "first_name": "Ghost"},
         )
 
         # Then: the contact is not found
@@ -91,7 +132,7 @@ class UpdateContactTests(ContactMCPTestCase):
             "update_contact",
             {
                 "contact_id": self.second_contact.id,
-                "payload": {"email": "jane@example.com"},
+                "email": "jane@example.com",
             },
         )
 
@@ -106,7 +147,7 @@ class UpdateContactTests(ContactMCPTestCase):
             "update_contact",
             {
                 "contact_id": self.contact.id,
-                "payload": {"first_name": "Nope"},
+                "first_name": "Nope",
             },
             user=None,
         )
