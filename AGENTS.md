@@ -80,6 +80,15 @@ validation, `IntegrityError`). Tool registration happens as an import side
 effect in `ContactsConfig.ready()` — a new MCP module must be imported there or
 its tools will silently not exist.
 
+**User-facing descriptions omit ownership.** REST view docstrings become the
+OpenAPI `description`; MCP tool docstrings become the tool description. Write
+the operation (`Create a contact`, `Get a single contact`), not who it is
+scoped to. Do not say "authenticated user", "current user", or "owned by the
+user" — queryset filtering already makes that true, and clients already know
+they are acting as themselves. Note when relevant that returned `name` and
+`age` are computed and read-only; field-level details belong in schema
+`Field(description=...)` text, not the operation docstring.
+
 **Tests** use `django.test.TestCase` with class data built in `setUpTestData`,
 and shared fixtures `create_user` / `create_contact` from `tests.fixtures`
 rather than inline object creation. Each test package has a `base.py` with a

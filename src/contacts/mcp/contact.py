@@ -63,7 +63,7 @@ async def search_contacts(
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> list[ContactSchema]:
-    """Search the authenticated user's contacts by a non-empty substring.
+    """Search contacts by a non-empty substring.
 
     Matching is case-insensitive across first_name, last_name, email, phone
     numbers, address, and notes. Use list_contacts to page without a query,
@@ -92,7 +92,7 @@ async def list_contacts(
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> list[ContactSchema]:
-    """List the authenticated user's contacts, newest not guaranteed.
+    """List contacts.
 
     Use search_contacts to filter by a substring, and get_contact for a
     single id. Returned name and age are computed and read-only.
@@ -107,7 +107,7 @@ async def get_contact(
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> ContactSchema:
-    """Get a single contact owned by the authenticated user.
+    """Get a single contact.
 
     Use search_contacts or list_contacts to find an id. Returned name and
     age are computed and read-only.
@@ -137,11 +137,9 @@ async def create_contact(
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> ContactSchema:
-    """Create a contact owned by the authenticated user.
+    """Create a contact.
 
-    Pass first_name and last_name separately; name is a read-only computed
-    field on the result. Phone numbers go in mobile_phone or home_phone,
-    not phone. Age is computed from date_of_birth and is also read-only.
+    Returned name and age are computed and read-only.
     """
 
     payload = ContactCreateUpdateSchema.model_validate(
@@ -187,11 +185,10 @@ async def update_contact(
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> ContactSchema:
-    """Update a contact owned by the authenticated user.
+    """Update a contact.
 
     Omitted fields are left unchanged; pass an empty string to clear a text
-    field. Pass first_name and last_name separately; name is read-only.
-    Phone numbers go in mobile_phone or home_phone, not phone.
+    field. Returned name and age are computed and read-only.
     """
 
     contact = await get_object(user=user, pk=contact_id, for_write=True)
@@ -233,7 +230,7 @@ async def delete_contact(
     *,
     user: Annotated[User, Resolve(get_current_user)],
 ) -> str:
-    """Permanently delete a contact owned by the authenticated user."""
+    """Permanently delete a contact."""
 
     contact = await get_object(user=user, pk=contact_id, for_write=True)
 

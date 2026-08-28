@@ -23,16 +23,28 @@ async def get_object(request: HttpRequest, pk: int):
 
 @router.get("/", response=list[ContactSchema])
 async def list_contacts(request: HttpRequest):
+    """List contacts.
+
+    Returned name and age are computed and read-only.
+    """
     return [contact async for contact in get_queryset(request)]
 
 
 @router.get("/{contact_id}/", response=ContactSchema)
 async def get_contact(request: HttpRequest, contact_id: int):
+    """Get a single contact.
+
+    Returned name and age are computed and read-only.
+    """
     return await get_object(request, contact_id)
 
 
 @router.post("/", response={201: ContactSchema})
 async def create_contact(request: HttpRequest, payload: ContactCreateUpdateSchema):
+    """Create a contact.
+
+    Returned name and age are computed and read-only.
+    """
     return 201, await Contact.objects.acreate(
         owner=request.auth,
         **payload.dict(),
@@ -45,6 +57,11 @@ async def update_contact(
     contact_id: int,
     payload: PatchDict[ContactCreateUpdateSchema],
 ):
+    """Update a contact.
+
+    Omitted fields are left unchanged; pass an empty string to clear a text
+    field. Returned name and age are computed and read-only.
+    """
     contact = await get_object(request, contact_id)
 
     for attr, value in payload.items():
@@ -57,6 +74,7 @@ async def update_contact(
 
 @router.delete("/{contact_id}/", response={204: None})
 async def delete_contact(request: HttpRequest, contact_id: int):
+    """Permanently delete a contact."""
     contact = await get_object(request, contact_id)
 
     await contact.adelete()
