@@ -87,12 +87,16 @@ class Contact(TimestampMixin, models.Model):
 
     class Meta:
         db_table = "contacts"
+        ordering = ["-updated_at"]
         constraints = [
             models.UniqueConstraint(
                 fields=["owner", "email"],
                 condition=~Q(email=""),
                 name="contacts_unique_owner_email",
             ),
+        ]
+        indexes = [
+            models.Index(fields=["owner", "-updated_at"]),
         ]
 
     def __str__(self) -> str:
